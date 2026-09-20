@@ -4,8 +4,16 @@ if (tg) {
     tg.ready();
 }
 
-let board = Array(4).fill().map(() => Array(4).fill(0));
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const width = Math.min(window.innerWidth - 30, 360);
+canvas.width = width;
+canvas.height = width * 1.45; 
+
+const cellSize = width / 8;
 let score = 0;
+let board = Array(4).fill().map(() => Array(4).fill(0));
 
 const scoreDisplay = document.getElementById("score");
 const tileLayer = document.getElementById("tile-layer");
@@ -70,15 +78,79 @@ function renderBoard() {
     }
 }
 
-// Управление свайпами для телефонов
+// Корректная логика сжатия и объединения массивов (без багов)
+function slideAndMerge(row) {
+    // 1. Сдвигаем все числа влево (убираем нули)
+    let arr = row.filter(val => val !== 0);
+    
+    // 2. Объединяем одинаковые соседние элементы
+    for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i] === arr[i + 1]) {
+            arr[i] *= 2;
+            score += arr[i];
+            arr[i + 1] = 0;
+        }
+    }
+    
+    // 3. Снова убираем появившиеся после слияния нули и добиваем массив до длины 4
+    arr = arr.filter(val => val !== 0);
+    while (arr.length < 4) {
+        arr.push(0);
+    }
+    return arr;
+}
+
+function move(dir) {
+    let oldBoard = JSON.stringify(board);
+
+    if (dir === "left") {
+        for (let i = 0; i < 4; i++) {
+            board[i] = slideAndMerge(board[i]);
+        }
+    } else if (dir === "right") {
+        for (let i = 0; i < 4; i++) {
+            let row = [...board[i]].reverse();
+            row = slideAndMerge(row);
+            board[i] = row.reverse();
+        }
+    } else if (dir === "up") {
+        for (let c = 0; c < 4; c++) {
+            // Исправлено: Честно собираем вертикальный столбец
+            let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
+            row = slideAndMerge(row);
+            for (let r = 0; r < 4; r++) {
+                board[r][c] = row[r];
+            }
+        }
+    } else if (dir === "down") {
+        for (let c = 0; c < 4; c++) {
+            // Исправлено: Собираем вертикальный столбец и разворачиваем его
+            let row = [board[0][c], board[1][c], board[2][c], board[3][c]].reverse();
+            row = slideAndMerge(row);
+            row.reverse();
+            for (let r = 0; r < 4; r++) {
+                board[r][c] = row[r];
+            }
+        }
+    }
+
+    if (oldBoard !== JSON.stringify(board)) {
+        addRandomTile();
+        scoreDisplay.innerText = score;
+        renderBoard();
+    }
+}
+
+// Управление свайпами для мобилок
 let touchStartX = 0; let touchStartY = 0;
 window.addEventListener("touchstart", e => {
-    touchStartX = e.touches.clientX; touchStartY = e.touches.clientY;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
 }, { passive: true });
 
 window.addEventListener("touchend", e => {
-    let diffX = e.changedTouches.clientX - touchStartX;
-    let diffY = e.changedTouches.clientY - touchStartY;
+    let diffX = e.changedTouches[0].clientX - touchStartX;
+    let diffY = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > 30) diffX > 0 ? move("right") : move("left");
     } else {
@@ -86,7 +158,7 @@ window.addEventListener("touchend", e => {
     }
 });
 
-// Управление клавиатурой для ПК (Стрелочки)
+// Управление стрелочками для ПК
 window.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") move("left");
     if (e.key === "ArrowRight") move("right");
@@ -94,48 +166,9 @@ window.addEventListener("keydown", e => {
     if (e.key === "ArrowDown") move("down");
 });
 
-function slide(row) {
-    let arr = row.filter(val => val);
-    let missing = 4 - arr.length;
-    return arr.concat(Array(missing).fill(0));
-}
-
-function merge(row) {
-    row = slide(row);
-    for (let i = 0; i < 3; i++) {
-        if (row[i] === row[i+1] && row[i] !== 0) {
-            row[i] *= 2; score += row[i]; row[i+1] = 0;
-        }
-    }
-    return slide(row);
-}
-
-function move(dir) {
-    let oldBoard = JSON.stringify(board);
-    if (dir === "left" || dir === "right") {
-        for (let i = 0; i < 4; i++) {
-            let row = board[i];
-            if (dir === "right") row.reverse();
-            row = merge(row);
-            if (dir === "right") row.reverse();
-            board[i] = row;
-        }
-    } else {
-        for (let c = 0; c < 4; c++) {
-            let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
-            if (dir === "down") row.reverse();
-            row = merge(row);
-            if (dir === "down") row.reverse();
-            for (let r = 0; r < 4; r++) board[r][c] = row[r];
-        }
-    }
-    if (oldBoard !== JSON.stringify(board)) {
-        addRandomTile(); scoreDisplay.innerText = score; renderBoard();
-    }
-}
-
 function loadLeaderboard() {
     leaderboardList.innerHTML = '<div class="loading">Локальный топ временно пуст</div>';
 }
 
+// Стартуем игру автоматически
 initGame();
