@@ -22,11 +22,11 @@
         <!-- Игровое окно -->
         <div id="tab-game" class="tab-content">
             <div id="grid-container">
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div id="tile-layer"></div>
+                <!-- Задаем ID каждой ячейке от 0 до 15 -->
+                <div class="grid-cell" id="c-0"></div><div class="grid-cell" id="c-1"></div><div class="grid-cell" id="c-2"></div><div class="grid-cell" id="c-3"></div>
+                <div class="grid-cell" id="c-4"></div><div class="grid-cell" id="c-5"></div><div class="grid-cell" id="c-6"></div><div class="grid-cell" id="c-7"></div>
+                <div class="grid-cell" id="c-8"></div><div class="grid-cell" id="c-9"></div><div class="grid-cell" id="c-10"></div><div class="grid-cell" id="c-11"></div>
+                <div class="grid-cell" id="c-12"></div><div class="grid-cell" id="c-13"></div><div class="grid-cell" id="c-14"></div><div class="grid-cell" id="c-15"></div>
             </div>
             <button id="restart-btn">НАЧАТЬ ЗАНОВО</button>
         </div>
@@ -34,7 +34,7 @@
         <!-- Окно общего Лидерборда -->
         <div id="tab-leaderboard" class="tab-content hidden">
             <div id="leaderboard-list">
-                <div class="loading">Загрузка глобального топа...</div>
+                <div class="loading">Локальный топ временно пуст</div>
             </div>
         </div>
     </div>
