@@ -1,208 +1,175 @@
 const tg = window.Telegram.WebApp;
-if (tg) {
-    tg.expand();
-    tg.ready();
-}
+tg.expand();
+tg.ready();
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const width = Math.min(window.innerWidth - 30, 360);
-canvas.width = width;
-canvas.height = width * 1.45; 
-
-const cellSize = width / 8;
+let board = Array(4).fill().map(() => Array(4).fill(0));
 let score = 0;
-let grid = Array(8).fill().map(() => Array(8).fill(0));
+let username = "Игрок";
+let userId = "0";
 
-// ИСПРАВЛЕНО: Массивы фигур заданы вручную и без пропусков (1 - блок, 0 - пусто)
-const SHAPES_DATABASE = [
-    { shape: [[1]], color: "#ff4757" }, // Одиночный блок 1х1
-    { shape: [[1,1],[1,1]], color: "#1e90ff" }, // Квадрат 2х2
-    { shape: [[1,1,1]], color: "#2ed573" }, // Линия 3х1
-    { shape: [[1],[1],[1]], color: "#2ed573" }, // Линия 1х3
-    { shape: [[1,1,1,1]], color: "#ffa502" }, // Полоса 4х1
-    { shape: [[1],[1],[1],[1]], color: "#ffa502" }, // Полоса 1х4
-    { shape: [[1,0],[1,0],[1,1]], color: "#9b59b6" }, // L-образная уголок
-    { shape: [[1,1,1],[0,1,0]], color: "#ff007f" } // Т-образная
-];
-
-let pieces = [];
-let dragPiece = null;
-let offsetX = 0;
-let offsetY = 0;
-
-function generatePieces() {
-    pieces = [];
-    for (let i = 0; i < 3; i++) {
-        const randomIndex = Math.floor(Math.random() * SHAPES_DATABASE.length);
-        const template = SHAPES_DATABASE[randomIndex];
-        
-        const rows = template.shape.length;
-        const cols = template.shape[0].length;
-        const previewCellSize = cellSize * 0.5;
-
-        pieces.push({
-            shape: template.shape,
-            color: template.color,
-            x: i * (width / 3) + (width / 6) - (cols * previewCellSize) / 2,
-            y: width + 45,
-            origX: i * (width / 3) + (width / 6) - (cols * previewCellSize) / 2,
-            origY: width + 45,
-            cols: cols,
-            rows: rows
-        });
-    }
+if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    username = user.first_name || user.username || "Аноним";
+    userId = user.id.toString();
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+const SERVER_URL = "http://127.0.0.1:8080"; 
 
-    // Отрисовка шахматной доски 8х8
-    for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-            if (grid[r][c]) {
-                ctx.fillStyle = grid[r][c];
-            } else {
-                ctx.fillStyle = (r + c) % 2 === 0 ? "#191a29" : "#1f2035";
-            }
-            ctx.fillRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);
+const scoreDisplay = document.getElementById("score");
+const tileLayer = document.getElementById("tile-layer");
+const leaderboardList = document.getElementById("leaderboard-list");
+
+const btnGame = document.getElementById("btn-game");
+const btnLeaderboard = document.getElementById("btn-leaderboard");
+const tabGame = document.getElementById("tab-game");
+const tabLeaderboard = document.getElementById("tab-leaderboard");
+
+btnGame.addEventListener("click", () => {
+    btnGame.classList.add("active"); btnLeaderboard.classList.remove("active");
+    tabGame.classList.remove("hidden"); tabLeaderboard.classList.add("hidden");
+});
+
+btnLeaderboard.addEventListener("click", () => {
+    btnLeaderboard.classList.add("active"); btnGame.classList.remove("active");
+    tabGame.classList.add("hidden"); tabLeaderboard.classList.remove("hidden");
+    loadLeaderboard();
+});
+
+document.getElementById("restart-btn").addEventListener("click", initGame);
+
+function initGame() {
+    board = Array(4).fill().map(() => Array(4).fill(0));
+    score = 0;
+    scoreDisplay.innerText = score;
+    addRandomTile(); addRandomTile();
+    renderBoard();
+}
+
+function addRandomTile() {
+    let emptyCells = [];
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            if (board[r][c] === 0) emptyCells.push({ r, c });
         }
     }
-
-    // Подставка под блоки внизу
-    ctx.fillStyle = "#0e0f18";
-    ctx.fillRect(5, width + 15, width - 10, canvas.height - width - 20);
-
-    pieces.forEach(p => {
-        if (p === dragPiece) return;
-        drawBlock(p, p.x, p.y, cellSize * 0.5);
-    });
-
-    if (dragPiece) {
-        drawBlock(dragPiece, dragPiece.x, dragPiece.y, cellSize);
+    if (emptyCells.length > 0) {
+        let cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        board[cell.r][cell.c] = Math.random() < 0.9 ? 2 : 4;
     }
 }
 
-function drawBlock(p, startX, startY, size) {
-    ctx.fillStyle = p.color;
-    for (let r = 0; r < p.shape.length; r++) {
-        for (let c = 0; c < p.shape[r].length; c++) {
-            if (p.shape[r][c] === 1) {
-                ctx.fillRect(startX + c * size + 1, startY + r * size + 1, size - 2, size - 2);
+function renderBoard() {
+    tileLayer.innerHTML = "";
+    const spacing = 12;
+    const size = 70;
+
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            let val = board[r][c];
+            if (val > 0) {
+                let div = document.createElement("div");
+                div.className = `tile tile-${val}`;
+                div.innerText = val;
+                div.style.top = `${r * (size + spacing)}px`;
+                div.style.left = `${c * (size + spacing)}px`;
+                tileLayer.appendChild(div);
             }
         }
     }
 }
 
-function checkLines() {
-    let rowsToClear = [];
-    let colsToClear = [];
+let touchStartX = 0; let touchStartY = 0;
+window.addEventListener("touchstart", e => {
+    touchStartX = e.touches.clientX; touchStartY = e.touches.clientY;
+}, { passive: true });
 
-    for (let r = 0; r < 8; r++) {
-        if (grid[r].every(cell => cell !== 0)) rowsToClear.push(r);
-    }
-
-    for (let c = 0; c < 8; c++) {
-        let isColFull = true;
-        for (let r = 0; r < 8; r++) {
-            if (grid[r][c] === 0) { isColFull = false; break; }
-        }
-        if (isColFull) colsToClear.push(c);
-    }
-
-    rowsToClear.forEach(r => grid[r].fill(0));
-    colsToClear.forEach(c => {
-        for (let r = 0; r < 8; r++) grid[r][c] = 0;
-    });
-
-    if (rowsToClear.length > 0 || colsToClear.length > 0) {
-        score += (rowsToClear.length + colsToClear.length) * 10;
-        document.getElementById("score").innerText = score;
-    }
-}
-
-function getCoordinates(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches.clientX : e.clientX;
-    const clientY = e.touches ? e.touches.clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-}
-
-function startDrag(e) {
-    const pos = getCoordinates(e);
-    dragPiece = pieces.find(p => {
-        const size = cellSize * 0.5;
-        const w = p.cols * size;
-        const h = p.rows * size;
-        return pos.x >= p.x && pos.x <= p.x + w && pos.y >= p.y && pos.y <= p.y + h;
-    });
-
-    if (dragPiece) {
-        offsetX = (dragPiece.cols * cellSize) / 2;
-        offsetY = (dragPiece.rows * cellSize) + 30;
-        dragPiece.x = pos.x - offsetX;
-        dragPiece.y = pos.y - offsetY;
-        draw();
-    }
-}
-
-function moveDrag(e) {
-    if (!dragPiece) return;
-    if (e.touches) e.preventDefault();
-    const pos = getCoordinates(e);
-    dragPiece.x = pos.x - offsetX;
-    dragPiece.y = pos.y - offsetY;
-    draw();
-}
-
-function endDrag() {
-    if (!dragPiece) return;
-
-    const gridC = Math.round(dragPiece.x / cellSize);
-    const gridR = Math.round(dragPiece.y / cellSize);
-    let canPlace = true;
-
-    for (let r = 0; r < dragPiece.shape.length; r++) {
-        for (let c = 0; c < dragPiece.shape[r].length; c++) {
-            if (dragPiece.shape[r][c] === 1) {
-                let targetR = gridR + r;
-                let targetC = gridC + c;
-                if (targetR < 0 || targetR >= 8 || targetC < 0 || targetC >= 8 || grid[targetR][targetC] !== 0) {
-                    canPlace = false;
-                }
-            }
-        }
-    }
-
-    if (canPlace) {
-        for (let r = 0; r < dragPiece.shape.length; r++) {
-            for (let c = 0; c < dragPiece.shape[r].length; c++) {
-                if (dragPiece.shape[r][c] === 1) {
-                    grid[gridR + r][gridC + c] = dragPiece.color;
-                }
-            }
-        }
-        pieces = pieces.filter(p => p !== dragPiece);
-        score += 4;
-        document.getElementById("score").innerText = score;
-        checkLines();
-        if (pieces.length === 0) generatePieces();
+window.addEventListener("touchend", e => {
+    let diffX = e.changedTouches.clientX - touchStartX;
+    let diffY = e.changedTouches.clientY - touchStartY;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > 30) diffX > 0 ? move("right") : move("left");
     } else {
-        dragPiece.x = dragPiece.origX;
-        dragPiece.y = dragPiece.origY;
+        if (Math.abs(diffY) > 30) diffY > 0 ? move("down") : move("up");
     }
-    dragPiece = null;
-    draw();
+});
+
+window.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") move("left");
+    if (e.key === "ArrowRight") move("right");
+    if (e.key === "ArrowUp") move("up");
+    if (e.key === "ArrowDown") move("down");
+});
+
+function slide(row) {
+    let arr = row.filter(val => val);
+    let missing = 4 - arr.length;
+    return arr.concat(Array(missing).fill(0));
 }
 
-canvas.addEventListener("mousedown", startDrag);
-canvas.addEventListener("mousemove", moveDrag);
-window.addEventListener("mouseup", endDrag);
+function merge(row) {
+    row = slide(row);
+    for (let i = 0; i < 3; i++) {
+        if (row[i] === row[i+1] && row[i] !== 0) {
+            row[i] *= 2; score += row[i]; row[i+1] = 0;
+        }
+    }
+    return slide(row);
+}
 
-canvas.addEventListener("touchstart", startDrag, { passive: false });
-canvas.addEventListener("touchmove", moveDrag, { passive: false });
-canvas.addEventListener("touchend", endDrag);
+function move(dir) {
+    let oldBoard = JSON.stringify(board);
+    if (dir === "left" || dir === "right") {
+        for (let i = 0; i < 4; i++) {
+            let row = board[i];
+            if (dir === "right") row.reverse();
+            row = merge(row);
+            if (dir === "right") row.reverse();
+            board[i] = row;
+        }
+    } else {
+        for (let c = 0; c < 4; c++) {
+            let row = [board[c], board[c], board[c], board[c]];
+            if (dir === "down") row.reverse();
+            row = merge(row);
+            if (dir === "down") row.reverse();
+            for (let r = 0; r < 4; r++) board[r][c] = row[r];
+        }
+    }
+    if (oldBoard !== JSON.stringify(board)) {
+        addRandomTile(); scoreDisplay.innerText = score; renderBoard();
+        sendScoreToServer(score);
+    }
+}
 
-generatePieces();
-draw();
+function sendScoreToServer(currentScore) {
+    fetch(`${SERVER_URL}/api/score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, name: username, score: currentScore })
+    }).catch(e => console.log(e));
+}
+
+function loadLeaderboard() {
+    leaderboardList.innerHTML = '<div class="loading">Синхронизация...</div>';
+    fetch(`${SERVER_URL}/api/leaderboard`)
+        .then(res => res.json())
+        .then(data => {
+            leaderboardList.innerHTML = "";
+            if (data.length === 0) {
+                leaderboardList.innerHTML = '<div class="loading">Топ пуст!</div>';
+                return;
+            }
+            data.forEach((p, i) => {
+                leaderboardList.innerHTML += `
+                    <div class="player-row">
+                        <span class="player-name">${i+1}. ${p.name}</span>
+                        <span class="player-score">${p.score} ⚡</span>
+                    </div>`;
+            });
+        })
+        .catch(() => {
+            leaderboardList.innerHTML = '<div class="loading" style="color:#ff4757">Ошибка сервера</div>';
+        });
+}
+
+initGame();
