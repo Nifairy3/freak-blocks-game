@@ -1,28 +1,20 @@
 const tg = window.Telegram.WebApp;
-tg.expand();
-tg.ready();
+if (tg) {
+    tg.expand();
+    tg.ready();
+}
 
 let board = Array(4).fill().map(() => Array(4).fill(0));
 let score = 0;
-let username = "Игрок";
-let userId = "0";
-
-if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    const user = tg.initDataUnsafe.user;
-    username = user.first_name || user.username || "Аноним";
-    userId = user.id.toString();
-}
-
-const SERVER_URL = "http://127.0.0.1:8080"; 
 
 const scoreDisplay = document.getElementById("score");
 const tileLayer = document.getElementById("tile-layer");
-const leaderboardList = document.getElementById("leaderboard-list");
 
 const btnGame = document.getElementById("btn-game");
 const btnLeaderboard = document.getElementById("btn-leaderboard");
 const tabGame = document.getElementById("tab-game");
 const tabLeaderboard = document.getElementById("tab-leaderboard");
+const leaderboardList = document.getElementById("leaderboard-list");
 
 btnGame.addEventListener("click", () => {
     btnGame.classList.add("active"); btnLeaderboard.classList.remove("active");
@@ -78,6 +70,7 @@ function renderBoard() {
     }
 }
 
+// Управление свайпами для телефонов
 let touchStartX = 0; let touchStartY = 0;
 window.addEventListener("touchstart", e => {
     touchStartX = e.touches.clientX; touchStartY = e.touches.clientY;
@@ -93,6 +86,7 @@ window.addEventListener("touchend", e => {
     }
 });
 
+// Управление клавиатурой для ПК (Стрелочки)
 window.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") move("left");
     if (e.key === "ArrowRight") move("right");
@@ -128,7 +122,7 @@ function move(dir) {
         }
     } else {
         for (let c = 0; c < 4; c++) {
-            let row = [board[c], board[c], board[c], board[c]];
+            let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
             if (dir === "down") row.reverse();
             row = merge(row);
             if (dir === "down") row.reverse();
@@ -137,39 +131,11 @@ function move(dir) {
     }
     if (oldBoard !== JSON.stringify(board)) {
         addRandomTile(); scoreDisplay.innerText = score; renderBoard();
-        sendScoreToServer(score);
     }
 }
 
-function sendScoreToServer(currentScore) {
-    fetch(`${SERVER_URL}/api/score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, name: username, score: currentScore })
-    }).catch(e => console.log(e));
-}
-
 function loadLeaderboard() {
-    leaderboardList.innerHTML = '<div class="loading">Синхронизация...</div>';
-    fetch(`${SERVER_URL}/api/leaderboard`)
-        .then(res => res.json())
-        .then(data => {
-            leaderboardList.innerHTML = "";
-            if (data.length === 0) {
-                leaderboardList.innerHTML = '<div class="loading">Топ пуст!</div>';
-                return;
-            }
-            data.forEach((p, i) => {
-                leaderboardList.innerHTML += `
-                    <div class="player-row">
-                        <span class="player-name">${i+1}. ${p.name}</span>
-                        <span class="player-score">${p.score} ⚡</span>
-                    </div>`;
-            });
-        })
-        .catch(() => {
-            leaderboardList.innerHTML = '<div class="loading" style="color:#ff4757">Ошибка сервера</div>';
-        });
+    leaderboardList.innerHTML = '<div class="loading">Локальный топ временно пуст</div>';
 }
 
 initGame();
