@@ -2,14 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Freak Blocks</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org"></script>
 </head>
 <body>
     <div id="game-container">
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <div id="score">Очки: 0</div>
-        <div id="next-blocks"></div>
+        <div id="title-container">FREAK BLOCKS</div>
+        <div id="score-container">ОЧКИ: <span id="score">0</span></div>
+        <canvas id="gameCanvas"></canvas>
     </div>
     <script src="script.js"></script>
 </body>
