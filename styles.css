@@ -1,42 +1,182 @@
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background-color: #0c0d14;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at center, #111222 0%, #070811 100%);
     color: #ffffff;
     margin: 0;
     padding: 0;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     height: 100vh;
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
 }
+
 #game-container {
+    width: 90%;
+    max-width: 360px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 400px;
 }
-#title-container {
-    font-size: 34px;
+
+#game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#title {
+    font-size: 30px;
     font-weight: 900;
     color: #ff4757;
     letter-spacing: 2px;
-    text-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
-    margin-bottom: 2px;
+    text-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
 }
-#score-container {
-    font-size: 22px;
+
+#score-box {
+    background: #181a30;
+    padding: 8px 20px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: #8b8ea8;
+    border: 1px solid #2c2f55;
+}
+
+#score {
+    font-size: 24px;
     font-weight: 800;
-    color: #2ed573;
-    margin-bottom: 15px;
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
 }
-canvas {
-    background-color: #151622;
+
+.tabs {
+    display: flex;
+    background: #131528;
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #1f223f;
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #797c9c;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+.tab-content { width: 100%; }
+.hidden { display: none !important; }
+
+#grid-container {
+    width: 340px;
+    height: 340px;
+    background: #141529;
     border-radius: 16px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
-    touch-action: none;
+    padding: 12px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 12px;
+    position: relative;
+    border: 1px solid #232649;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
 }
+
+.grid-cell {
+    background: #1c1e36;
+    border-radius: 10px;
+}
+
+#tile-layer {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    pointer-events: none;
+}
+
+.tile {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    font-size: 26px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    animation: scaleUp 0.15s ease-in-out;
+}
+
+@keyframes scaleUp {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Фриковые неоновые плитки */
+.tile-2 { background: #1e272c; color: #00ff88; border: 2px solid #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.2); }
+.tile-4 { background: #1e272c; color: #00ecff; border: 2px solid #00ecff; box-shadow: 0 0 8px rgba(0,236,255,0.2); }
+.tile-8 { background: linear-gradient(135deg, #ff9f43 0%, #ffb142 100%); color: #fff; }
+.tile-16 { background: linear-gradient(135deg, #ff5252 0%, #ff793f 100%); color: #fff; }
+.tile-32 { background: linear-gradient(135deg, #ff1744 0%, #ff5252 100%); color: #fff; }
+.tile-64 { background: linear-gradient(135deg, #d500f9 0%, #f50057 100%); color: #fff; box-shadow: 0 0 12px rgba(245,0,87,0.4); }
+.tile-128 { background: #00e5ff; color: #0f1123; font-size: 22px; box-shadow: 0 0 15px #00e5ff; }
+.tile-256 { background: #00ff88; color: #0f1123; font-size: 22px; box-shadow: 0 0 15px #00ff88; }
+.tile-512 { background: #7c4dff; color: #fff; font-size: 22px; box-shadow: 0 0 15px #7c4dff; }
+.tile-1024 { background: #ff007f; color: #fff; font-size: 18px; box-shadow: 0 0 20px #ff007f; }
+.tile-2048 { background: linear-gradient(135deg, #ff4757 0%, #9b59b6 100%); color: #fff; font-size: 18px; box-shadow: 0 0 25px #ff4757; }
+
+#restart-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border: none;
+    background: linear-gradient(135deg, #00ff88 0%, #00b365 100%);
+    color: #070811;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+#leaderboard-list {
+    background: #141529;
+    border-radius: 16px;
+    padding: 10px;
+    border: 1px solid #232649;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.player-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 12px;
+    border-bottom: 1px solid #1c1e36;
+    font-size: 15px;
+}
+.player-row:last-child { border-bottom: none; }
+.player-name { font-weight: bold; color: #d1d4e6; }
+.player-score { color: #00ff88; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,136,0.3); }
+.loading { text-align: center; padding: 30px; color: #797c9c; font-weight: bold; }
