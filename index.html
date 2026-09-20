@@ -9,10 +9,36 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="title-container">FREAK BLOCKS</div>
-        <div id="score-container">ОЧКИ: <span id="score">0</span></div>
-        <canvas id="gameCanvas"></canvas>
+        <div id="game-header">
+            <div id="title">FREAK BLOCKS</div>
+            <div id="score-box">ОЧКИ<br><span id="score">0</span></div>
+        </div>
+
+        <div class="tabs">
+            <button id="btn-game" class="tab-btn active">🎮 ИГРАТЬ</button>
+            <button id="btn-leaderboard" class="tab-btn">🏆 ТОП ИГРОКОВ</button>
+        </div>
+
+        <!-- Игровое окно -->
+        <div id="tab-game" class="tab-content">
+            <div id="grid-container">
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div id="tile-layer"></div>
+            </div>
+            <button id="restart-btn">НАЧАТЬ ЗАНОВО</button>
+        </div>
+
+        <!-- Окно общего Лидерборда -->
+        <div id="tab-leaderboard" class="tab-content hidden">
+            <div id="leaderboard-list">
+                <div class="loading">Загрузка глобального топа...</div>
+            </div>
+        </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
